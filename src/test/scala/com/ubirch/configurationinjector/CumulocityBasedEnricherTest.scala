@@ -16,6 +16,6 @@ class CumulocityBasedEnricherTest extends FlatSpec with Matchers {
     val newRecord = CumulocityBasedEnricher.enrich(record)
 
     import CumulocityBasedEnricher.cumulocityFormats
-    val hardware = newRecord.value().getContext[Hardware]("hardwareInfo")
+    val _ = newRecord.value().getContext[Hardware]("hardwareInfo")
   }
 }
