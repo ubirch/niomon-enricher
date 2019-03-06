@@ -5,7 +5,7 @@ import akka.actor.ActorSystem
 import akka.kafka.scaladsl.{Consumer, Producer}
 import akka.kafka._
 import akka.stream.{ActorMaterializer, KillSwitches, UniqueKillSwitch}
-import akka.stream.scaladsl.{Keep, RestartSink, RestartSource, RunnableGraph, Sink, Source}
+import akka.stream.scaladsl.{Flow, Keep, RestartSink, RestartSource, RunnableGraph, Sink, Source}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.StrictLogging
 import com.ubirch.kafka._
@@ -52,12 +52,15 @@ package object configurationinjector extends StrictLogging {
       randomFactor = 0.2
     ) { () => Producer.commitableSink(producerSettings) }
 
+  def injectorFlow(enricher: Enricher) = Flow[ConsumerMessage.CommittableMessage[String, MessageEnvelope]].map { message =>
+    val record = enricher.enrich(message.record)
+
+    val producerRecord = record.toProducerRecord(outgoingTopic)
+    ProducerMessage.Message(producerRecord, message.committableOffset)
+  }
+
   val injectorGraph: RunnableGraph[UniqueKillSwitch] = kafkaSource
     .viaMat(KillSwitches.single)(Keep.right)
-    .map { message =>
-      val record = CumulocityBasedEnricher.enrich(message.record)
-
-      val producerRecord = record.toProducerRecord(outgoingTopic)
-      ProducerMessage.Message(producerRecord, message.committableOffset)
-    }.to(kafkaSink)
+    .via(injectorFlow(CumulocityBasedEnricher))
+    .to(kafkaSink)
 }
