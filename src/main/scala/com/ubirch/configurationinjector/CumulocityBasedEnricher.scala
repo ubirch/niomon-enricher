@@ -18,7 +18,7 @@ import org.svenson.AbstractDynamicProperties
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
-object CumulocityBasedEnricher {
+object CumulocityBasedEnricher extends Enricher {
   private val cumulocityClient: Platform = PlatformBuilder.platform()
     .withBaseUrl(conf.getString("cumulocity.baseUrl"))
     .withTenant(conf.getString("cumulocity.tenant"))
@@ -26,7 +26,7 @@ object CumulocityBasedEnricher {
     .withUsername(conf.getString("cumulocity.username"))
     .build()
 
-  private val inventoryApi: InventoryApi = cumulocityClient.getInventoryApi
+  private lazy val inventoryApi: InventoryApi = cumulocityClient.getInventoryApi
 
   // Formats instance that delegates to cumulocity sdk serializer
   implicit val cumulocityFormats: Formats = com.ubirch.kafka.formats + new Serializer[AbstractDynamicProperties] {
