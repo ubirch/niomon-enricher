@@ -2,19 +2,20 @@ package com.ubirch
 
 import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.kafka.scaladsl.{Consumer, Producer}
 import akka.kafka._
-import akka.stream.{ActorMaterializer, KillSwitches, UniqueKillSwitch}
+import akka.kafka.scaladsl.{Consumer, Producer}
 import akka.stream.scaladsl.{Flow, Keep, RestartSink, RestartSource, RunnableGraph, Sink, Source}
+import akka.stream.{ActorMaterializer, KillSwitches, UniqueKillSwitch}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.StrictLogging
 import com.ubirch.kafka._
-import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord}
+import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
 
+//noinspection TypeAnnotation
 package object configurationinjector extends StrictLogging {
   val conf: Config = ConfigFactory.load
   implicit val system: ActorSystem = ActorSystem("configuration-injector")
