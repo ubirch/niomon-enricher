@@ -54,10 +54,19 @@ package object configurationinjector extends StrictLogging {
     ) { () => Producer.commitableSink(producerSettings) }
 
   def injectorFlow(enricher: Enricher) = Flow[ConsumerMessage.CommittableMessage[String, MessageEnvelope]].map { message =>
-    val record = enricher.enrich(message.record)
+    val record = try {
+      enricher.enrich(message.record)
+    } catch {
+      case e: Exception =>
+        logger.error("unexpected error when getting config", e)
+        message.record.withExtraContext("error", e.getMessage)
+    }
 
     val producerRecord = record.toProducerRecord(outgoingTopic)
     ProducerMessage.Message(producerRecord, message.committableOffset)
+  }.mapError { case e =>
+    logger.error("unexpected error in the injector flow", e)
+    e
   }
 
   val injectorGraph: RunnableGraph[UniqueKillSwitch] = kafkaSource
