@@ -43,15 +43,13 @@ object CumulocityBasedEnricher extends Enricher {
       case None => return record.withExtraContext("error", "device not found in cumulocity")
     }
 
-    val hardware = cumulocityDevice.getField[Hardware]
-
     // TODO: add extra stuff from cumulocity
     //       look at `c8y.*` in com.nsn.cumulocity.model:device-capability-model maven lib
     //       possibly also our custom stuff that will be stored in cumulocity
 
     record.withExtraContext(
       "cumulocityInfo" -> cumulocityInfo,
-      "hardwareInfo" -> hardware,
+      "hardwareInfo" -> cumulocityDevice.getField[Hardware],
       "owner" -> cumulocityDevice.getOwner,
       "deviceName" -> cumulocityDevice.getName,
       "type" -> cumulocityDevice.getType,
