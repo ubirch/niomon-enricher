@@ -8,6 +8,7 @@ import com.cumulocity.model.JSONBase
 import com.cumulocity.rest.representation.inventory.ManagedObjectRepresentation
 import com.cumulocity.sdk.client.inventory.{InventoryApi, InventoryFilter}
 import com.cumulocity.sdk.client.{Platform, PlatformBuilder}
+import com.typesafe.config.Config
 import com.ubirch.kafka.MessageEnvelope
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.json4s
@@ -19,7 +20,7 @@ import org.svenson.AbstractDynamicProperties
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
-object CumulocityBasedEnricher extends Enricher {
+case class CumulocityBasedEnricher(conf: Config) extends Enricher {
   // Formats instance that delegates to cumulocity sdk serializer
   implicit val cumulocityFormats: Formats = com.ubirch.kafka.formats + new Serializer[AbstractDynamicProperties] {
     def deserialize(implicit format: Formats): PartialFunction[(json4s.TypeInfo, JValue), AbstractDynamicProperties] = {

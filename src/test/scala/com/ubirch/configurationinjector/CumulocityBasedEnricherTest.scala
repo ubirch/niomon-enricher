@@ -3,6 +3,7 @@ package com.ubirch.configurationinjector
 import java.util.UUID
 
 import c8y.Hardware
+import com.typesafe.config.ConfigFactory
 import com.ubirch.kafka.MessageEnvelope
 import com.ubirch.protocol.ProtocolMessage
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -13,9 +14,10 @@ class CumulocityBasedEnricherTest extends FlatSpec with Matchers {
     val record = new ConsumerRecord[String, MessageEnvelope]("foo", 0, 0, "bar",
       MessageEnvelope(new ProtocolMessage(28, UUID.fromString("957bdffc-1a62-11e9-92bb-c83ea7010f86"), 0, null)))
 
-    val newRecord = CumulocityBasedEnricher.enrich(record)
+    val enricher = CumulocityBasedEnricher(ConfigFactory.load().getConfig("configuration-injector"))
+    val newRecord = enricher.enrich(record)
 
-    import CumulocityBasedEnricher.cumulocityFormats
+    import enricher.cumulocityFormats
     val _ = newRecord.value().getContext[Hardware]("hardwareInfo")
   }
 }
