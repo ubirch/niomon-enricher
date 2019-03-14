@@ -8,8 +8,6 @@ import net.manub.embeddedkafka.EmbeddedKafka
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
 import org.scalatest.{FlatSpec, Matchers}
 
-import scala.concurrent.duration._
-
 //noinspection TypeAnnotation
 class ConfigurationInjectorMicroserviceTest extends FlatSpec with Matchers with EmbeddedKafka {
   implicit val stringSerializer = new StringSerializer
