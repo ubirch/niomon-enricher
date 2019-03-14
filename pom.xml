@@ -81,6 +81,19 @@
             <version>${scalatest.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.github.embeddedkafka</groupId>
+            <artifactId>embedded-kafka_${scala.major.version}</artifactId>
+            <version>2.1.1</version>
+            <scope>test</scope>
+            <exclusions>
+                <!-- The version of paranamer that embedded-kafka (via avro) uses breaks json4s ;_; -->
+                <exclusion>
+                    <artifactId>paranamer</artifactId>
+                    <groupId>com.thoughtworks.paranamer</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 
         <!-- other dependencies -->
         <dependency>
@@ -112,6 +125,7 @@
                 </executions>
                 <configuration>
                     <recompileMode>incremental</recompileMode>
+                    <args><arg>-deprecation</arg></args>
                 </configuration>
             </plugin>
             <!-- disable surefire -->
@@ -265,17 +279,10 @@
     </build>
 
     <repositories>
-        <!-- simple kafka client -->
-        <repository>
-            <id>bintray-cakesolutions-maven</id>
-            <name>bintray</name>
-            <url>http://dl.bintray.com/cakesolutions/maven</url>
-        </repository>
         <repository>
             <id>cumulocity-public</id>
             <url>http://download.cumulocity.com/maven/repository</url>
         </repository>
-
     </repositories>
 
 </project>

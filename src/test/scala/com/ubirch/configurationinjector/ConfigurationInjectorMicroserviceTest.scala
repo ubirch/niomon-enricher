@@ -2,41 +2,48 @@ package com.ubirch.configurationinjector
 
 import java.util.UUID
 
-import akka.stream.scaladsl.{Keep, Sink, Source}
 import com.ubirch.kafka._
 import com.ubirch.protocol.ProtocolMessage
-import org.apache.kafka.clients.consumer.ConsumerRecord
+import net.manub.embeddedkafka.EmbeddedKafka
+import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
 import org.scalatest.{FlatSpec, Matchers}
 
-import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class ConfigurationInjectorMicroserviceTest extends FlatSpec with Matchers {
+//noinspection TypeAnnotation
+class ConfigurationInjectorMicroserviceTest extends FlatSpec with Matchers with EmbeddedKafka {
+  implicit val stringSerializer = new StringSerializer
+  implicit val stringDeserializer = new StringDeserializer
+  implicit val envelopeSerializer = EnvelopeSerializer
+  implicit val envelopeDeserializer = EnvelopeDeserializer
+
   "configuration injector microservice" should "inject configuration using given enricher" in {
     var timesEnricherInvoked = 0
     val enricher: Enricher = { record => timesEnricherInvoked += 1; record.withExtraContext("foo", 42) }
 
-    val microservice = new ConfigurationInjectorMicroservice(_ => enricher)
-    import microservice.materializer
+    withRunningKafka {
+      val microservice = new ConfigurationInjectorMicroservice(_ => enricher)
+      microservice.run
 
-    val records = List(mkArbitraryRecord(), mkArbitraryRecord(), mkArbitraryRecord())
-    val source = Source(records)
+      val toSend = List(
+        "key-1" -> MessageEnvelope(new ProtocolMessage(28, UUID.randomUUID(), 0, "foobar")),
+        "key-2" -> MessageEnvelope(new ProtocolMessage(28, UUID.randomUUID(), 0, "foobar")),
+        "key-3" -> MessageEnvelope(new ProtocolMessage(28, UUID.randomUUID(), 0, "foobar"))
+      )
 
-    val res = Await.result(source.map(microservice.processRecord).toMat(Sink.seq)(Keep.right).run(), 3.seconds)
+      publishToKafka("incoming", toSend)
 
-    // enricher is invoked for every packet
-    timesEnricherInvoked should equal(3)
+      val res = consumeNumberMessagesFrom[MessageEnvelope]("outgoing", 3)
 
-    // context is added
-    res.map(_.value().getContext[Int]("foo")) should equal(Seq(42, 42, 42))
+      // enricher is invoked for every packet
+      timesEnricherInvoked should equal(3)
 
-    // ubirch packets are left untouched
-    res.map(_.value().ubirchPacket) should equal(records.map(_.value().ubirchPacket))
-  }
+      // context is added
+      res.map(_.getContext[Int]("foo")) should equal(Seq(42, 42, 42))
 
-  def mkArbitraryRecord(): ConsumerRecord[String, MessageEnvelope] = {
-    new ConsumerRecord("topic", 0, 0, "some-key", MessageEnvelope(
-      new ProtocolMessage(28, UUID.randomUUID(), 0, "foobar")
-    ))
+      // ubirch packets are left untouched
+      // NOTE: the .toStrings are needed, because ProtocolMessage doesn't override equals...
+      res.map(_.ubirchPacket.toString) should equal(toSend.map(_._2.ubirchPacket.toString))
+    }
   }
 }
