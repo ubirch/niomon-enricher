@@ -8,8 +8,8 @@ import com.cumulocity.model.JSONBase
 import com.cumulocity.rest.representation.inventory.ManagedObjectRepresentation
 import com.cumulocity.sdk.client.inventory.{InventoryApi, InventoryFilter}
 import com.cumulocity.sdk.client.{Platform, PlatformBuilder}
-import com.typesafe.config.Config
 import com.ubirch.kafka.MessageEnvelope
+import com.ubirch.niomon.base.NioMicroservice
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.json4s
 import org.json4s.jackson.JsonMethods
@@ -20,7 +20,7 @@ import org.svenson.AbstractDynamicProperties
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
-case class CumulocityBasedEnricher(conf: Config) extends Enricher {
+case class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enricher {
   // Formats instance that delegates to cumulocity sdk serializer
   implicit val cumulocityFormats: Formats = com.ubirch.kafka.formats + new Serializer[AbstractDynamicProperties] {
     def deserialize(implicit format: Formats): PartialFunction[(json4s.TypeInfo, JValue), AbstractDynamicProperties] = {
@@ -39,7 +39,7 @@ case class CumulocityBasedEnricher(conf: Config) extends Enricher {
   def enrich(record: ConsumerRecord[String, MessageEnvelope]): ConsumerRecord[String, MessageEnvelope] = {
     val uuid = record.value().ubirchPacket.getUUID
     val cumulocityInfo = getCumulocityInfo(record.headersScala)
-    val cumulocityDevice = getDevice(uuid, getInventory(cumulocityInfo)) match {
+    val cumulocityDevice = getDeviceCached((uuid, cumulocityInfo)) match {
       case Some(device) => device
       case None => return record.withExtraContext("error", "device not found in cumulocity")
     }
@@ -49,7 +49,6 @@ case class CumulocityBasedEnricher(conf: Config) extends Enricher {
     //       possibly also our custom stuff that will be stored in cumulocity
 
     record.withExtraContext(
-      "cumulocityInfo" -> cumulocityInfo,
       "hardwareInfo" -> cumulocityDevice.getField[Hardware],
       "owner" -> cumulocityDevice.getOwner,
       "deviceName" -> cumulocityDevice.getName,
@@ -73,8 +72,8 @@ case class CumulocityBasedEnricher(conf: Config) extends Enricher {
 
   // TODO: this only supports basic auth for now
   def getCumulocityInfo(headers: Map[String, String]): CumulocityInfo = {
-    val baseUrl = headers.getOrElse("X-Cumulocity-BaseUrl", conf.getString("cumulocity.baseUrl"))
-    val tenant = headers.getOrElse("X-Cumulocity-Tenant", conf.getString("cumulocity.tenant"))
+    val baseUrl = headers.getOrElse("X-Cumulocity-BaseUrl", context.config.getString("cumulocity.baseUrl"))
+    val tenant = headers.getOrElse("X-Cumulocity-Tenant", context.config.getString("cumulocity.tenant"))
 
     val (username, password) = headers.get("Authorization") match {
       case Some(basicAuth) if basicAuth.startsWith("Basic ") =>
@@ -82,13 +81,19 @@ case class CumulocityBasedEnricher(conf: Config) extends Enricher {
         val Array(user, pass) = basicAuthDecoded.split(":", 2)
         (user, pass)
       case None =>
-        (conf.getString("cumulocity.username"), conf.getString("cumulocity.password"))
+        (context.config.getString("cumulocity.username"), context.config.getString("cumulocity.password"))
     }
 
     CumulocityInfo(baseUrl, tenant, username, password)
   }
 
-  def getDevice(uuid: UUID, inventoryApi: InventoryApi): Option[ManagedObjectRepresentation] = {
+  def getDeviceKey(uuidAndInfo: (UUID, CumulocityInfo)): String = uuidAndInfo.toString()
+
+  lazy val getDeviceCached: ((UUID, CumulocityInfo)) => Option[ManagedObjectRepresentation] =
+    context.cached("device-cache", getDeviceKey) { case (uuid, info) => getDevice(uuid, info) }
+
+  def getDevice(uuid: UUID, cumulocityInfo: CumulocityInfo): Option[ManagedObjectRepresentation] = {
+    val inventoryApi = getInventory(cumulocityInfo)
     val uuidStr = uuid.toString
     val cumulocityFilter = InventoryFilter.searchInventory().byFragmentType(classOf[IsDevice]).byText(uuidStr)
 
