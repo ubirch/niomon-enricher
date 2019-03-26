@@ -1,6 +1,5 @@
 package com.ubirch.configurationinjector
 
-import com.typesafe.config.Config
 import com.ubirch.kafka._
 import com.ubirch.niomon.base.NioMicroservice
 import org.apache.kafka.clients.consumer.ConsumerRecord

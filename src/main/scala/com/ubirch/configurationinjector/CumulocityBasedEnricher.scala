@@ -87,10 +87,8 @@ case class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enr
     CumulocityInfo(baseUrl, tenant, username, password)
   }
 
-  def getDeviceKey(uuidAndInfo: (UUID, CumulocityInfo)): String = uuidAndInfo.toString()
-
   lazy val getDeviceCached: ((UUID, CumulocityInfo)) => Option[ManagedObjectRepresentation] =
-    context.cached("device-cache", getDeviceKey) { case (uuid, info) => getDevice(uuid, info) }
+    context.cached("device-cache") { case (uuid, info) => getDevice(uuid, info) }
 
   def getDevice(uuid: UUID, cumulocityInfo: CumulocityInfo): Option[ManagedObjectRepresentation] = {
     val inventoryApi = getInventory(cumulocityInfo)

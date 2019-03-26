@@ -19,7 +19,8 @@ import redis.embedded.RedisServer
 class CumulocityBasedEnricherTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val config = ConfigFactory.load()
 
-  "CumulocityBasedEnricher" should "inject data from cumulocity to ubirch packet envelopes" in {
+  // this is ignored by default because it requires having C8Y_* env variable cumulocity credentials set
+  "CumulocityBasedEnricher" should "inject data from cumulocity to ubirch packet envelopes" ignore {
     val redissonConfig = Config.fromJSON(config.getConfig("redisson").root().render(ConfigRenderOptions.concise()))
     redissonConfig.setCodec(new FstCodec(FSTConfiguration.createDefaultConfiguration().setForceSerializable(true)))
     val redisson = Redisson.create(redissonConfig)
@@ -28,10 +29,11 @@ class CumulocityBasedEnricherTest extends FlatSpec with Matchers with BeforeAndA
       MessageEnvelope(new ProtocolMessage(28, UUID.fromString("957bdffc-1a62-11e9-92bb-c83ea7010f86"), 0, null)))
 
     val enricher = CumulocityBasedEnricher(new NioMicroservice.Context(redisson, config.getConfig("configuration-injector")))
-    val newRecord = enricher.enrich(record)
 
-    import enricher.cumulocityFormats
-    val _ = newRecord.value().getContext[Hardware]("hardwareInfo")
+    val newRecord = enricher.enrich(record)
+    val fromCache = enricher.enrich(record)
+
+    newRecord.value().context should equal (fromCache.value().context)
   }
 
   val redis = new RedisServer()
