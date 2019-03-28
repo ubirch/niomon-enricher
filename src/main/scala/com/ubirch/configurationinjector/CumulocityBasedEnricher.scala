@@ -39,7 +39,7 @@ case class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enr
   def enrich(record: ConsumerRecord[String, MessageEnvelope]): ConsumerRecord[String, MessageEnvelope] = {
     val uuid = record.value().ubirchPacket.getUUID
     val cumulocityInfo = getCumulocityInfo(record.headersScala)
-    val cumulocityDevice = getDeviceCached((uuid, cumulocityInfo)) match {
+    val cumulocityDevice = getDeviceCached(uuid, cumulocityInfo) match {
       case Some(device) => device
       case None => return record.withExtraContext("error", "device not found in cumulocity")
     }
@@ -87,8 +87,8 @@ case class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enr
     CumulocityInfo(baseUrl, tenant, username, password)
   }
 
-  lazy val getDeviceCached: ((UUID, CumulocityInfo)) => Option[ManagedObjectRepresentation] =
-    context.cached("device-cache") { case (uuid, info) => getDevice(uuid, info) }
+  lazy val getDeviceCached: (UUID, CumulocityInfo) => Option[ManagedObjectRepresentation] =
+    context.cached(getDevice _).buildCache(name = "device-cache")
 
   def getDevice(uuid: UUID, cumulocityInfo: CumulocityInfo): Option[ManagedObjectRepresentation] = {
     val inventoryApi = getInventory(cumulocityInfo)
