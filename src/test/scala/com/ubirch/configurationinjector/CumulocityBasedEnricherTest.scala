@@ -21,9 +21,8 @@ class CumulocityBasedEnricherTest extends FlatSpec with Matchers with BeforeAndA
 
   // this is ignored by default because it requires having C8Y_* env variable cumulocity credentials set
   "CumulocityBasedEnricher" should "inject data from cumulocity to ubirch packet envelopes" ignore {
-    val redissonConfig = Config.fromJSON(config.getConfig("redisson").root().render(ConfigRenderOptions.concise()))
-    redissonConfig.setCodec(new FstCodec(FSTConfiguration.createDefaultConfiguration().setForceSerializable(true)))
-    val redisson = Redisson.create(redissonConfig)
+    val microserviceRedissonDonor = new NioMicroservice[String, String]("configuration-injector") {}
+    val redisson = microserviceRedissonDonor.redisson
 
     val record = new ConsumerRecord[String, MessageEnvelope]("foo", 0, 0, "bar",
       MessageEnvelope(new ProtocolMessage(28, UUID.fromString("957bdffc-1a62-11e9-92bb-c83ea7010f86"), 0, null)))
