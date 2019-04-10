@@ -8,6 +8,7 @@ import com.cumulocity.model.JSONBase
 import com.cumulocity.rest.representation.inventory.ManagedObjectRepresentation
 import com.cumulocity.sdk.client.inventory.{InventoryApi, InventoryFilter}
 import com.cumulocity.sdk.client.{Platform, PlatformBuilder}
+import com.typesafe.scalalogging.StrictLogging
 import com.ubirch.kafka.MessageEnvelope
 import com.ubirch.niomon.base.NioMicroservice
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -20,7 +21,7 @@ import org.svenson.AbstractDynamicProperties
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
-case class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enricher {
+case class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enricher with StrictLogging {
   // Formats instance that delegates to cumulocity sdk serializer
   implicit val cumulocityFormats: Formats = com.ubirch.kafka.formats + new Serializer[AbstractDynamicProperties] {
     def deserialize(implicit format: Formats): PartialFunction[(json4s.TypeInfo, JValue), AbstractDynamicProperties] = {
@@ -41,7 +42,9 @@ case class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enr
     val cumulocityInfo = getCumulocityInfo(record.headersScala)
     val cumulocityDevice = getDeviceCached(uuid, cumulocityInfo) match {
       case Some(device) => device
-      case None => return record.withExtraContext("error", "device not found in cumulocity")
+      case None =>
+        logger.error(s"device [$uuid] not found in cumulocity")
+        return record.withExtraContext("error", "device not found in cumulocity")
     }
 
     // TODO: add extra stuff from cumulocity
