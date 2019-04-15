@@ -11,14 +11,6 @@ class ConfigurationInjectorMicroservice(enricherFactory: NioMicroservice.Context
   val enricher: Enricher = enricherFactory(context)
 
   override def processRecord(input: ConsumerRecord[String, MessageEnvelope]): ProducerRecord[String, MessageEnvelope] = {
-    val record = try {
-      enricher.enrich(input)
-    } catch {
-      case e: Exception =>
-        logger.error("unexpected error when getting config", e)
-        input.withExtraContext("error", e.getMessage)
-    }
-
-    record.toProducerRecord(outputTopics("default"))
+    enricher.enrich(input).toProducerRecord(outputTopics("default"))
   }
 }

@@ -11,6 +11,7 @@ import com.cumulocity.sdk.client.{Platform, PlatformBuilder}
 import com.typesafe.scalalogging.StrictLogging
 import com.ubirch.kafka.MessageEnvelope
 import com.ubirch.niomon.base.NioMicroservice
+import com.ubirch.niomon.base.NioMicroservice.WithHttpStatus
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.json4s
 import org.json4s.jackson.JsonMethods
@@ -44,7 +45,7 @@ case class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enr
       case Some(device) => device
       case None =>
         logger.error(s"device [$uuid] not found in cumulocity")
-        return record.withExtraContext("error", "device not found in cumulocity")
+        throw WithHttpStatus(404, new NoSuchElementException(s"Device [$uuid] not found in cumulocity"))
     }
 
     // TODO: add extra stuff from cumulocity
