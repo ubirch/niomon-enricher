@@ -11,6 +11,6 @@ class ConfigurationInjectorMicroservice(enricherFactory: NioMicroservice.Context
   val enricher: Enricher = enricherFactory(context)
 
   override def processRecord(input: ConsumerRecord[String, MessageEnvelope]): ProducerRecord[String, MessageEnvelope] = {
-    enricher.enrich(input).toProducerRecord(outputTopics("default"))
+    enricher.enrich(input).toProducerRecord(onlyOutputTopic)
   }
 }
