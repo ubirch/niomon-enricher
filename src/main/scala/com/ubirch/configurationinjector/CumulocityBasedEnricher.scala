@@ -62,13 +62,20 @@ case class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enr
       "cumulocityUrl" -> cumulocityDevice.getSelf
     )
 
-    val contextResponseKey = "configuredResponse"
-    val cumulocityResponseKey = s"niomon.$contextResponseKey"
+    // Add custom response if it exists
+    // TODO: now this is done through `c8y_Notes` field in the device, we should have our own field, but it's unclear
+    //  how to make that nice with cumulocity UI
+    val notes = cumulocityDevice.getProperty("c8y_Notes").asInstanceOf[String]
+    if (notes != null) {
+      val messageHeader = "ubirch-response"
+      val messageFooter = "end-ubirch-response"
 
-    if (cumulocityDevice.hasProperty(cumulocityResponseKey)) {
-      r = r.withExtraContext(contextResponseKey,
-        JsonMethods.parse(cumulocityDevice.get(cumulocityResponseKey).asInstanceOf[String])
-      )
+      val start = notes.indexOf(messageHeader)
+      val end = notes.indexOf(messageFooter)
+      if (start != -1 && end != -1) {
+        val customResponse = notes.substring(start + messageHeader.length, end)
+        r = r.withExtraContext("configuredResponse", JsonMethods.parse(customResponse))
+      }
     }
 
     r
