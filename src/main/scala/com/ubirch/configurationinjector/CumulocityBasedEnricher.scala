@@ -52,7 +52,7 @@ case class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enr
     //       look at `c8y.*` in com.nsn.cumulocity.model:device-capability-model maven lib
     //       possibly also our custom stuff that will be stored in cumulocity
 
-    record.withExtraContext(
+    var r = record.withExtraContext(
       "hardwareInfo" -> cumulocityDevice.getField[Hardware],
       "customerId" -> cumulocityDevice.getOwner,
       "deviceName" -> cumulocityDevice.getName,
@@ -61,6 +61,17 @@ case class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enr
       "lastUpdateTime" -> cumulocityDevice.getLastUpdated,
       "cumulocityUrl" -> cumulocityDevice.getSelf
     )
+
+    val contextResponseKey = "configuredResponse"
+    val cumulocityResponseKey = s"niomon.$contextResponseKey"
+
+    if (cumulocityDevice.hasProperty(cumulocityResponseKey)) {
+      r = r.withExtraContext(contextResponseKey,
+        JsonMethods.parse(cumulocityDevice.get(cumulocityResponseKey).asInstanceOf[String])
+      )
+    }
+
+    r
   }
 
   def getInventory(info: CumulocityInfo): InventoryApi = {
