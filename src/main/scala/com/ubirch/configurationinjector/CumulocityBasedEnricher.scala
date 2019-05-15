@@ -52,7 +52,7 @@ case class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enr
     //       look at `c8y.*` in com.nsn.cumulocity.model:device-capability-model maven lib
     //       possibly also our custom stuff that will be stored in cumulocity
 
-    record.withExtraContext(
+    var r = record.withExtraContext(
       "hardwareInfo" -> cumulocityDevice.getField[Hardware],
       "customerId" -> cumulocityDevice.getOwner,
       "deviceName" -> cumulocityDevice.getName,
@@ -61,6 +61,24 @@ case class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enr
       "lastUpdateTime" -> cumulocityDevice.getLastUpdated,
       "cumulocityUrl" -> cumulocityDevice.getSelf
     )
+
+    // Add custom response if it exists
+    // TODO: now this is done through `c8y_Notes` field in the device, we should have our own field, but it's unclear
+    //  how to make that nice with cumulocity UI
+    val notes = cumulocityDevice.getProperty("c8y_Notes").asInstanceOf[String]
+    if (notes != null) {
+      val messageHeader = "ubirch-response"
+      val messageFooter = "end-ubirch-response"
+
+      val start = notes.indexOf(messageHeader)
+      val end = notes.indexOf(messageFooter)
+      if (start != -1 && end != -1) {
+        val customResponse = notes.substring(start + messageHeader.length, end)
+        r = r.withExtraContext("configuredResponse", JsonMethods.parse(customResponse))
+      }
+    }
+
+    r
   }
 
   def getInventory(info: CumulocityInfo): InventoryApi = {
