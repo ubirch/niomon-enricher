@@ -67,38 +67,19 @@
             <artifactId>device-capability-model</artifactId>
             <version>9.16.0</version>
         </dependency>
-        <!-- scala, logging etc. -->
+
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>${logback-classic.version}</version>
+            <groupId>org.json4s</groupId>
+            <artifactId>json4s-ext_${scala.major.version}</artifactId>
+            <version>3.6.0</version>
         </dependency>
 
         <!-- test dependencies -->
-        <dependency>
-            <groupId>org.scalatest</groupId>
-            <artifactId>scalatest_${scala.major.version}</artifactId>
-            <version>${scalatest.version}</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>com.github.kstyrc</groupId>
             <artifactId>embedded-redis</artifactId>
             <version>0.6</version>
             <scope>test</scope>
-        </dependency>
-
-        <!-- other dependencies -->
-        <dependency>
-            <groupId>org.json4s</groupId>
-            <artifactId>json4s-native_${scala.major.version}</artifactId>
-            <version>${json4s-native.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.jvm.uuid</groupId>
-            <artifactId>scala-uuid_${scala.major.version}</artifactId>
-            <version>${scala-uuid.version}</version>
         </dependency>
     </dependencies>
 
@@ -107,19 +88,6 @@
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
-                <version>${scala-maven-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>compile</goal>
-                            <goal>testCompile</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <recompileMode>incremental</recompileMode>
-                    <args><arg>-deprecation</arg></args>
-                </configuration>
             </plugin>
             <!-- disable surefire -->
             <plugin>

@@ -57,8 +57,8 @@ case class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enr
       "customerId" -> cumulocityDevice.getOwner,
       "deviceName" -> cumulocityDevice.getName,
       "type" -> cumulocityDevice.getType,
-      "creationTime" -> cumulocityDevice.getCreationTime, // json4s doesn't support DateTime
-      "lastUpdateTime" -> cumulocityDevice.getLastUpdated,
+      "creationTime" -> cumulocityDevice.getCreationDateTime, // json4s doesn't support DateTime
+      "lastUpdateTime" -> cumulocityDevice.getLastUpdatedDateTime,
       "cumulocityUrl" -> cumulocityDevice.getSelf
     )
 
