@@ -2,16 +2,11 @@ package com.ubirch.configurationinjector
 
 import java.util.UUID
 
-import c8y.Hardware
-import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
+import com.typesafe.config.ConfigFactory
 import com.ubirch.kafka.MessageEnvelope
 import com.ubirch.niomon.base.NioMicroservice
 import com.ubirch.protocol.ProtocolMessage
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.nustaq.serialization.FSTConfiguration
-import org.redisson.Redisson
-import org.redisson.codec.FstCodec
-import org.redisson.config.Config
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import redis.embedded.RedisServer
 
