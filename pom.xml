@@ -52,7 +52,7 @@
             <version>1.0.0</version>
         </dependency>
 
-        <!-- Cumulocity client -->
+        <!-- region Cumulocity client -->
         <dependency>
             <groupId>com.nsn.cumulocity.clients-java</groupId>
             <artifactId>java-client</artifactId>
@@ -63,7 +63,9 @@
             <artifactId>device-capability-model</artifactId>
             <version>9.16.0</version>
         </dependency>
+        <!-- endregion -->
 
+        <!-- json4s extensions for date types etc. -->
         <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-ext_${scala.major.version}</artifactId>
