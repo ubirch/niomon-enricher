@@ -14,6 +14,7 @@ import com.ubirch.niomon.base.NioMicroservice
 import com.ubirch.niomon.base.NioMicroservice.WithHttpStatus
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.json4s
+import org.json4s.ext.JodaTimeSerializers
 import org.json4s.jackson.JsonMethods
 import org.json4s.reflect.TypeInfo
 import org.json4s.{Formats, JValue, Serializer}
@@ -36,7 +37,7 @@ case class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enr
     def serialize(implicit format: Formats): PartialFunction[Any, JValue] = {
       case x: AbstractDynamicProperties => JsonMethods.parse(JSONBase.getJSONGenerator.forValue(x))
     }
-  }
+  } ++ JodaTimeSerializers.all
 
   def enrich(record: ConsumerRecord[String, MessageEnvelope]): ConsumerRecord[String, MessageEnvelope] = {
     val uuid = record.value().ubirchPacket.getUUID
