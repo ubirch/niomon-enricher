@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.typesafe.config.ConfigFactory
 import com.ubirch.kafka.MessageEnvelope
-import com.ubirch.niomon.base.NioMicroservice
+import com.ubirch.niomon.base.{NioMicroservice, NioMicroserviceLive}
 import com.ubirch.protocol.ProtocolMessage
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
@@ -16,7 +16,7 @@ class CumulocityBasedEnricherTest extends FlatSpec with Matchers with BeforeAndA
 
   // this is ignored by default because it requires having C8Y_* env variable cumulocity credentials set
   "CumulocityBasedEnricher" should "inject data from cumulocity to ubirch packet envelopes" ignore {
-    val microserviceRedissonDonor = new NioMicroservice[String, String]("configuration-injector") {}
+    val microserviceRedissonDonor = NioMicroserviceLive[String, String]("configuration-injector", _ => ???)
     val redisson = microserviceRedissonDonor.redisson
 
     val record = new ConsumerRecord[String, MessageEnvelope]("foo", 0, 0, "bar",
