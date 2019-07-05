@@ -1,0 +1,42 @@
+{{- define "configuration-injector.env" -}}
+- name: C8Y_BASEURL
+  value: "https://ubirch.cumulocity.com/"
+- name: C8Y_TENANT
+  value: "ubirch"
+- name: KAFKA_TOPIC_IN
+  value: "json.validated"
+- name: KAFKA_TOPIC_OUT_DEFAULT
+  value: "json.to.sign"
+- name: KAFKA_TOPIC_OUT_ERROR
+  value: "niomon.error"
+- name: C8Y_USERNAME
+  valueFrom:
+    secretKeyRef:
+      name: cumulocity-secrets-niomon
+      key: cumulocity-username
+- name: C8Y_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: cumulocity-secrets-niomon
+      key: cumulocity-password
+- name: REDIS_MASTER_URL
+  value: "{{.Values.redis.masterURL}}"
+- name: REDIS_SLAVE_URL
+  value: "{{.Values.redis.slaveURL}}"
+- name: REDIS_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      key: redis-password
+      name: {{.Values.redisSecretName}}
+{{- end -}}
+
+{{- $deployment := (dict "envStr" (include "configuration-injector.env" .)) -}}
+
+{{- $_ := set $deployment "Root" . -}}
+{{- $_ := set $deployment "name" "configuration-injector" -}}
+
+{{ template "niomon.deployment" $deployment }}
+
+---
+
+{{ template "niomon.service" $deployment }}
