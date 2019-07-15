@@ -1,0 +1,6 @@
+/target
+/Dockerfile
+/*.iml
+/helm/enricher/templates/_helpers.yaml
+/helm/enricher/.helmignore
+/helm/enricher/values.*.yaml

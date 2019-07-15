@@ -1,4 +1,4 @@
-{{- define "configuration-injector.env" -}}
+{{- define "niomon-enricher.env" -}}
 - name: C8Y_BASEURL
   value: "https://ubirch.cumulocity.com/"
 - name: C8Y_TENANT
@@ -30,10 +30,10 @@
       name: {{.Values.redisSecretName}}
 {{- end -}}
 
-{{- $deployment := (dict "envStr" (include "configuration-injector.env" .)) -}}
+{{- $deployment := (dict "envStr" (include "niomon-enricher.env" .)) -}}
 
 {{- $_ := set $deployment "Root" . -}}
-{{- $_ := set $deployment "name" "configuration-injector" -}}
+{{- $_ := set $deployment "name" "niomon-enricher" -}}
 
 {{ template "niomon.deployment" $deployment }}
 
