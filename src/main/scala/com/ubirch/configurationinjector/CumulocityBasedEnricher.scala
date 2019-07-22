@@ -6,7 +6,7 @@ import java.util.{Base64, UUID}
 import c8y.{Hardware, IsDevice}
 import com.cumulocity.model.JSONBase
 import com.cumulocity.rest.representation.inventory.ManagedObjectRepresentation
-import com.cumulocity.sdk.client.inventory.{InventoryApi, InventoryFilter}
+import com.cumulocity.sdk.client.inventory.InventoryFilter
 import com.cumulocity.sdk.client.{Platform, PlatformBuilder}
 import com.typesafe.scalalogging.StrictLogging
 import com.ubirch.kafka.MessageEnvelope
@@ -82,15 +82,13 @@ case class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enr
     r
   }
 
-  def getInventory(info: CumulocityInfo): InventoryApi = {
-    val cumulocityClient: Platform = PlatformBuilder.platform()
+  def getCumulocity(info: CumulocityInfo): Platform = {
+    PlatformBuilder.platform()
       .withBaseUrl(info.baseUrl)
       .withTenant(info.tenant)
       .withPassword(info.password)
       .withUsername(info.username)
       .build()
-
-    cumulocityClient.getInventoryApi
   }
 
   // TODO: this only supports basic auth for now
@@ -114,15 +112,20 @@ case class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enr
     context.cached(getDevice _).buildCache(name = "device-cache")
 
   def getDevice(uuid: UUID, cumulocityInfo: CumulocityInfo): Option[ManagedObjectRepresentation] = {
-    val inventoryApi = getInventory(cumulocityInfo)
-    val uuidStr = uuid.toString
-    val cumulocityFilter = InventoryFilter.searchInventory().byFragmentType(classOf[IsDevice]).byText(uuidStr)
+    val cumulocity = getCumulocity(cumulocityInfo)
+    try {
+      val inventoryApi = cumulocity.getInventoryApi
+      val uuidStr = uuid.toString
+      val cumulocityFilter = InventoryFilter.searchInventory().byFragmentType(classOf[IsDevice]).byText(uuidStr)
 
-    val devices = inventoryApi.getManagedObjectsByFilter(cumulocityFilter)
+      val devices = inventoryApi.getManagedObjectsByFilter(cumulocityFilter)
 
-    devices.get().allPages().asScala.find { dev =>
-      val hardware = dev.getField[Hardware]
-      hardware != null && hardware.getSerialNumber == uuidStr
+      devices.get().allPages().asScala.find { dev =>
+        val hardware = dev.getField[Hardware]
+        hardware != null && hardware.getSerialNumber == uuidStr
+      }
+    } finally {
+      cumulocity.close()
     }
   }
 
