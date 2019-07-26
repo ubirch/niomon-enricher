@@ -12,6 +12,7 @@ import com.typesafe.scalalogging.StrictLogging
 import com.ubirch.kafka.MessageEnvelope
 import com.ubirch.niomon.base.NioMicroservice
 import com.ubirch.niomon.base.NioMicroservice.WithHttpStatus
+import net.logstash.logback.argument.StructuredArguments.v
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.json4s
 import org.json4s.ext.JodaTimeSerializers
@@ -45,7 +46,7 @@ case class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enr
     val cumulocityDevice = getDeviceCached(uuid, cumulocityInfo) match {
       case Some(device) => device
       case None =>
-        logger.error(s"device [$uuid] not found in cumulocity")
+        logger.error(s"device [$uuid] not found in cumulocity", v("requestId", record.key()))
         throw WithHttpStatus(404, new NoSuchElementException(s"Device [$uuid] not found in cumulocity"))
     }
 
