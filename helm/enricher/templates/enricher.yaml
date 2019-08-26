@@ -4,11 +4,11 @@
 - name: C8Y_TENANT
   value: "ubirch"
 - name: KAFKA_TOPIC_IN
-  value: "json.validated"
+  value: "ubirch-niomon-msg-validated-json"
 - name: KAFKA_TOPIC_OUT_DEFAULT
-  value: "json.to.sign"
+  value: "ubirch-common-message-json"
 - name: KAFKA_TOPIC_OUT_ERROR
-  value: "niomon.error"
+  value: "ubirch-niomon-error-json"
 - name: C8Y_USERNAME
   valueFrom:
     secretKeyRef:
@@ -34,6 +34,7 @@
 
 {{- $_ := set $deployment "Root" . -}}
 {{- $_ := set $deployment "name" "enricher" -}}
+  {{- $_ := set $deployment "replicas" .Values.enricher.replicas -}}
 
 {{ template "niomon.deployment" $deployment }}
 
