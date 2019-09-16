@@ -24,7 +24,7 @@ import org.svenson.AbstractDynamicProperties
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
-case class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enricher with StrictLogging {
+class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enricher with StrictLogging {
   // Formats instance that delegates to cumulocity sdk serializer
   implicit val cumulocityFormats: Formats = com.ubirch.kafka.formats + new Serializer[AbstractDynamicProperties] {
     def deserialize(implicit format: Formats): PartialFunction[(json4s.TypeInfo, JValue), AbstractDynamicProperties] = {
