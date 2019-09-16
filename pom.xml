@@ -111,6 +111,13 @@
             <version>3.6.0</version>
         </dependency>
 
+        <!-- http client -->
+        <dependency>
+            <groupId>com.softwaremill.sttp</groupId>
+            <artifactId>core_${scala.major.version}</artifactId>
+            <version>1.6.6</version>
+        </dependency>
+
         <!-- test dependencies -->
         <dependency>
             <groupId>com.github.kstyrc</groupId>
