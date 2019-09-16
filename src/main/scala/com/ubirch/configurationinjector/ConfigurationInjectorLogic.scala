@@ -13,7 +13,7 @@ class ConfigurationInjectorLogic(
   val enricher: Enricher = enricherFactory(context)
 
   override def processRecord(input: ConsumerRecord[String, MessageEnvelope]): ProducerRecord[String, MessageEnvelope] = {
-    enricher.enrich(input).toProducerRecord(onlyOutputTopic)
+    enricher.enrich(input).toProducerRecord(onlyOutputTopic) // TODO: drop auth headers
   }
 }
 
