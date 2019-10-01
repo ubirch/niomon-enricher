@@ -22,7 +22,7 @@ class CumulocityBasedEnricherTest extends FlatSpec with Matchers with BeforeAndA
     val record = new ConsumerRecord[String, MessageEnvelope]("foo", 0, 0, "bar",
       MessageEnvelope(new ProtocolMessage(28, UUID.fromString("957bdffc-1a62-11e9-92bb-c83ea7010f86"), 0, null)))
 
-    val enricher = CumulocityBasedEnricher(new NioMicroservice.Context(redisson, config.getConfig("niomon-enricher")))
+    val enricher = new CumulocityBasedEnricher(new NioMicroservice.Context(redisson, config.getConfig("niomon-enricher")))
 
     val newRecord = enricher.enrich(record)
     val fromCache = enricher.enrich(record)

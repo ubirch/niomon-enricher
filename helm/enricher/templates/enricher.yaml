@@ -9,6 +9,8 @@
   value: "ubirch-common-message-json"
 - name: KAFKA_TOPIC_OUT_ERROR
   value: "ubirch-niomon-error-json"
+- name: UBIRCH_DEVICE_INFO_URL
+  value: "{{.Values.enricher.ubirchDeviceInfoUrl}}"
 - name: C8Y_USERNAME
   valueFrom:
     secretKeyRef:
