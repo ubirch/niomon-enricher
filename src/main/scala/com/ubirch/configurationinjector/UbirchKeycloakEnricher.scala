@@ -27,7 +27,7 @@ class UbirchKeycloakEnricher(deviceInfoUrl: String) extends Enricher with Strict
       configuredNiomonResponse = parsedResponse \ "attributes" \ "configuredResponse"
     } yield parsedResponse.merge(JObject("configuredResponse" -> configuredNiomonResponse))
 
-    enrichment.fold({error =>
+    enrichment.fold({ error =>
       logger.error(s"error while trying to enrich [${v("requestId", record.key())}]", error)
       record
     }, { extraData =>
