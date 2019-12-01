@@ -24,11 +24,14 @@ class UbirchKeycloakEnricher(deviceInfoUrl: String) extends Enricher with Strict
         .map(_.asInstanceOf[JObject])
         .toRight(new IllegalArgumentException("response body couldn't be parsed as json object"))
 
+      // we extract the configuredResponse field and merge it back into the root, because that's what responder service
+      // expects
       configuredNiomonResponse = parsedResponse \ "attributes" \ "configuredResponse"
     } yield parsedResponse.merge(JObject("configuredResponse" -> configuredNiomonResponse))
 
     enrichment.fold({ error =>
       logger.error(s"error while trying to enrich [{}]", v("requestId", record.key()), error)
+      // we ignore the errors here
       record
     }, { extraData =>
       val newContext = record.value().context.merge(extraData)

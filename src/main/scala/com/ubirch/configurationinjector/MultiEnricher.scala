@@ -3,6 +3,7 @@ import com.ubirch.kafka.MessageEnvelope
 import com.ubirch.niomon.base.NioMicroservice
 import org.apache.kafka.clients.consumer.ConsumerRecord
 
+/** Enricher that dispatches between the cumulocity- and keycloak-based enrichers */
 class MultiEnricher(context: NioMicroservice.Context) extends Enricher {
   val cumulocityBasedEnricher = new CumulocityBasedEnricher(context)
   val ubirchKeycloakEnricher = new UbirchKeycloakEnricher(context.config.getString("ubirch-device-info-url"))
