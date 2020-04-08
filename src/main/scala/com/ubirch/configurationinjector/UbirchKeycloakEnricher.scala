@@ -15,7 +15,7 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher 
   private val deviceInfoUrl = context.config.getString("ubirch-device-info-url")
 
   lazy val getDeviceCached: String => Either[Throwable, String] =
-    context.cached(getDevice _).buildCache(name = "device-keycloak-cache")
+    context.cached(getDevice _).buildCache(name = "device-cache")
 
   def getDevice(token: String): Either[Throwable, String] = {
     for {
