@@ -32,6 +32,7 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher 
     val enrichment = for {
       token <- record.findHeader("X-Ubirch-DeviceInfo-Token")
         .toRight(new NoSuchElementException("No X-Ubirch-DeviceInfo-Token header present"))
+
       responseBody <- getDeviceCached(token)
 
       parsedResponse <- JsonMethods.parseOpt(responseBody)
