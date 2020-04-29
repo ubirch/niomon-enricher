@@ -9,7 +9,7 @@ class MultiEnricher(context: NioMicroservice.Context) extends Enricher {
   val ubirchKeycloakEnricher = new UbirchKeycloakEnricher(context)
 
   override def enrich(record: ConsumerRecord[String, MessageEnvelope]): ConsumerRecord[String, MessageEnvelope] = {
-    record.headersScala.get("X-Ubirch-Auth-Type") match {
+    record.findHeader("X-Ubirch-Auth-Type") match {
       case Some("keycloak") | Some("ubirch") => ubirchKeycloakEnricher.enrich(record)
       case _ => cumulocityBasedEnricher.enrich(record)
     }

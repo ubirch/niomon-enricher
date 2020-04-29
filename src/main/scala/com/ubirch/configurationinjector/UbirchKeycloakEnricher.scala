@@ -30,7 +30,7 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher 
 
   override def enrich(record: ConsumerRecord[String, MessageEnvelope]): ConsumerRecord[String, MessageEnvelope] = {
     val enrichment = for {
-      token <- record.headersScala.get("X-Ubirch-DeviceInfo-Token")
+      token <- record.findHeader("X-Ubirch-DeviceInfo-Token")
         .toRight(new NoSuchElementException("No X-Ubirch-DeviceInfo-Token header present"))
       responseBody <- getDeviceCached(token)
 

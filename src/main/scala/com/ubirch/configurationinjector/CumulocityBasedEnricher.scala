@@ -12,6 +12,7 @@ import com.typesafe.scalalogging.StrictLogging
 import com.ubirch.kafka.MessageEnvelope
 import com.ubirch.niomon.base.NioMicroservice
 import com.ubirch.niomon.base.NioMicroservice.WithHttpStatus
+import com.ubirch.niomon.util.EnrichedMap.toEnrichedMap
 import net.logstash.logback.argument.StructuredArguments.v
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.json4s
@@ -94,10 +95,10 @@ class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enricher
 
   // TODO: this only supports basic auth for now
   def getCumulocityInfo(headers: Map[String, String]): CumulocityInfo = {
-    val baseUrl = headers.getOrElse("X-Cumulocity-BaseUrl", context.config.getString("cumulocity.baseUrl"))
-    val tenant = headers.getOrElse("X-Cumulocity-Tenant", context.config.getString("cumulocity.tenant"))
+    val baseUrl = headers.CaseInsensitive.getOrElse("X-Cumulocity-BaseUrl", context.config.getString("cumulocity.baseUrl"))
+    val tenant = headers.CaseInsensitive.getOrElse("X-Cumulocity-Tenant", context.config.getString("cumulocity.tenant"))
 
-    val (username, password) = headers.get("Authorization") match {
+    val (username, password) = headers.CaseInsensitive.get("Authorization") match {
       case Some(basicAuth) if basicAuth.startsWith("Basic ") =>
         val basicAuthDecoded = new String(Base64.getDecoder.decode(basicAuth.stripPrefix("Basic ")), StandardCharsets.UTF_8)
         val Array(user, pass) = basicAuthDecoded.split(":", 2)
