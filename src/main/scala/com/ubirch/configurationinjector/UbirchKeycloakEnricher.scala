@@ -17,10 +17,11 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher 
   lazy val getDeviceCached: String => Either[Throwable, String] =
     context.cached(getDevice _).buildCache(name = "device-cache")
 
+  logger.info("device_info_url={}", deviceInfoUrl)
+
   def getDevice(token: String): Either[Throwable, String] = {
     for {
       uri <- Uri.parse(deviceInfoUrl).toEither
-      _  = logger.info("device_info_url={}", uri.toString())
       response = sttp.get(uri).header("Authorization", s"bearer $token").send()
       body <- response.body.left.map(_ => new NoSuchElementException("No device info"))
     } yield {
