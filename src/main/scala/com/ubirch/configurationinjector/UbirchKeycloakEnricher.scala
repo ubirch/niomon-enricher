@@ -10,6 +10,7 @@ import org.json4s.JsonAST.JObject
 import org.json4s.jackson.JsonMethods
 
 class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher with StrictLogging {
+
   implicit val sttpBackend: SttpBackend[Id, Nothing] = HttpURLConnectionBackend()
 
   private val deviceInfoUrl = context.config.getString("ubirch-device-info-url")
