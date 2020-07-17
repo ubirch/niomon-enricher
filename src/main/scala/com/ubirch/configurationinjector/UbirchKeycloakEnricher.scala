@@ -29,9 +29,9 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher 
     }
   }
 
-  override def enrich(input: ConsumerRecord[String, MessageEnvelope]): ConsumerRecord[String, MessageEnvelope] = {
+  override def enrich(record: ConsumerRecord[String, MessageEnvelope]): ConsumerRecord[String, MessageEnvelope] = {
     val enrichment = for {
-      token <- input.findHeader("X-Ubirch-DeviceInfo-Token")
+      token <- record.findHeader("X-Ubirch-DeviceInfo-Token")
         .toRight(new NoSuchElementException("No X-Ubirch-DeviceInfo-Token header present"))
 
       responseBody <- getDeviceCached(token)
@@ -47,13 +47,13 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher 
     } yield parsedResponse.merge(JObject("configuredResponse" -> configuredNiomonResponse))
 
     enrichment.fold({ error =>
-      val requestId = input.requestIdHeader().orNull
+      val requestId = record.requestIdHeader().orNull
       logger.error(s"error while trying to enrich [{}]", v("requestId", requestId), error)
       // we ignore the errors here
-      input
+      record
     }, { extraData =>
-      val newContext = input.value().context.merge(extraData)
-      input.copy(value = input.value().copy(context = newContext))
+      val newContext = record.value().context.merge(extraData)
+      record.copy(value = record.value().copy(context = newContext))
     })
   }
 }

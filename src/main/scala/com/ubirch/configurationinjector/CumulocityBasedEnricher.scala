@@ -41,13 +41,13 @@ class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enricher
     }
   } ++ JodaTimeSerializers.all
 
-  def enrich(input: ConsumerRecord[String, MessageEnvelope]): ConsumerRecord[String, MessageEnvelope] = {
-    val uuid = input.value().ubirchPacket.getUUID
-    val cumulocityInfo = getCumulocityInfo(input.headersScala)
+  def enrich(record: ConsumerRecord[String, MessageEnvelope]): ConsumerRecord[String, MessageEnvelope] = {
+    val uuid = record.value().ubirchPacket.getUUID
+    val cumulocityInfo = getCumulocityInfo(record.headersScala)
     val cumulocityDevice = getDeviceCached(uuid, cumulocityInfo) match {
       case Some(device) => device
       case None =>
-        val requestId = input.requestIdHeader().orNull
+        val requestId = record.requestIdHeader().orNull
         logger.error(s"device [$uuid] not found in cumulocity", v("requestId", requestId))
         throw WithHttpStatus(404, new NoSuchElementException(s"Device [$uuid] not found in cumulocity"))
     }
@@ -56,7 +56,7 @@ class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enricher
     //       look at `c8y.*` in com.nsn.cumulocity.model:device-capability-model maven lib
     //       possibly also our custom stuff that will be stored in cumulocity
 
-    var r = input.withExtraContext(
+    var r = record.withExtraContext(
       "hardwareInfo" -> cumulocityDevice.getField[Hardware],
       "customerId" -> cumulocityDevice.getOwner,
       "deviceName" -> cumulocityDevice.getName,
