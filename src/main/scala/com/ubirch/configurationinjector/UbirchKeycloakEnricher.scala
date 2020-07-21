@@ -10,6 +10,7 @@ import org.json4s.JsonAST.JObject
 import org.json4s.jackson.JsonMethods
 
 class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher with StrictLogging {
+
   implicit val sttpBackend: SttpBackend[Id, Nothing] = HttpURLConnectionBackend()
 
   private val deviceInfoUrl = context.config.getString("ubirch-device-info-url")
@@ -47,7 +48,8 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher 
     } yield parsedResponse.merge(JObject("configuredResponse" -> configuredNiomonResponse))
 
     enrichment.fold({ error =>
-      logger.error(s"error while trying to enrich [{}]", v("requestId", record.key()), error)
+      val requestId = record.requestIdHeader().orNull
+      logger.error(s"error while trying to enrich [{}]", v("requestId", requestId), error)
       // we ignore the errors here
       record
     }, { extraData =>

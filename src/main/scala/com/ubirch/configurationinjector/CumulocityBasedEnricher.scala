@@ -47,7 +47,8 @@ class CumulocityBasedEnricher(context: NioMicroservice.Context) extends Enricher
     val cumulocityDevice = getDeviceCached(uuid, cumulocityInfo) match {
       case Some(device) => device
       case None =>
-        logger.error(s"device [$uuid] not found in cumulocity", v("requestId", record.key()))
+        val requestId = record.requestIdHeader().orNull
+        logger.error(s"device [$uuid] not found in cumulocity", v("requestId", requestId))
         throw WithHttpStatus(404, new NoSuchElementException(s"Device [$uuid] not found in cumulocity"))
     }
 
