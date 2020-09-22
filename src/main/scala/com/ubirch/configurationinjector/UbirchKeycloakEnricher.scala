@@ -32,7 +32,8 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher 
 
   override def enrich(record: ConsumerRecord[String, MessageEnvelope]): ConsumerRecord[String, MessageEnvelope] = {
     val enrichment = for {
-      token <- record.findHeader("X-Ubirch-DeviceInfo-Token")
+      token <- record
+        .findHeader("X-Ubirch-DeviceInfo-Token")
         .toRight(new NoSuchElementException("No X-Ubirch-DeviceInfo-Token header present"))
 
       responseBody <- getDeviceCached(token)
@@ -51,10 +52,19 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher 
       val requestId = record.requestIdHeader().orNull
       logger.error(s"error while trying to enrich [{}]", v("requestId", requestId), error)
       // we ignore the errors here
-      record
+      record.withExtraHeaders("http-status-code" -> "400", "x-code" -> xcode(error).toString)
+
     }, { extraData =>
       val newContext = record.value().context.merge(extraData)
       record.copy(value = record.value().copy(context = newContext))
     })
   }
+
+  def xcode(reason: Throwable): Int = reason match {
+    case _: NoSuchElementException => 1000
+    case _: IllegalArgumentException => 2000
+    case _: RuntimeException => 4000
+    case _ => 5000
+  }
+
 }
