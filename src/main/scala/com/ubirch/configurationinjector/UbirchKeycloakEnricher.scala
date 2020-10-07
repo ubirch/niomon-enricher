@@ -6,8 +6,12 @@ import com.ubirch.kafka.MessageEnvelope
 import com.ubirch.niomon.base.NioMicroservice
 import net.logstash.logback.argument.StructuredArguments.v
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.json4s.Formats
+import org.json4s._
 import org.json4s.JsonAST.JObject
 import org.json4s.jackson.JsonMethods
+
+case class DeviceInfo(hwDeviceId: String, description: String, customerId: String)
 
 class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher with StrictLogging {
 
@@ -31,6 +35,9 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher 
   }
 
   override def enrich(record: ConsumerRecord[String, MessageEnvelope]): ConsumerRecord[String, MessageEnvelope] = {
+
+    implicit val formats: Formats = com.ubirch.kafka.formats
+
     val enrichment = for {
       token <- record
         .findHeader("X-Ubirch-DeviceInfo-Token")
@@ -43,10 +50,12 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher 
         .map(_.asInstanceOf[JObject])
         .toRight(new IllegalArgumentException("response body couldn't be parsed as json object"))
 
-      // we extract the configuredResponse field and merge it back into the root, because that's what responder service
-      // expects
-      configuredNiomonResponse = parsedResponse \ "attributes" \ "configuredResponse"
-    } yield parsedResponse.merge(JObject("configuredResponse" -> configuredNiomonResponse))
+      _ <- scala.util.Try(Extraction.extract[DeviceInfo](parsedResponse))
+        .recover {
+          case _: Exception => throw new IllegalArgumentException("response body couldn't be materialized")
+        }.toEither
+
+    } yield parsedResponse
 
     enrichment.fold({ error =>
       val requestId = record.requestIdHeader().orNull
