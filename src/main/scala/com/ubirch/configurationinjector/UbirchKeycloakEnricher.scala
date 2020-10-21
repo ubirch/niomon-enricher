@@ -4,6 +4,7 @@ import com.softwaremill.sttp._
 import com.typesafe.scalalogging.StrictLogging
 import com.ubirch.kafka.MessageEnvelope
 import com.ubirch.niomon.base.NioMicroservice
+import com.ubirch.niomon.base.NioMicroservice.WithHttpStatus
 import net.logstash.logback.argument.StructuredArguments.v
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.json4s.Formats
@@ -28,7 +29,7 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher 
     for {
       uri <- Uri.parse(deviceInfoUrl).toEither
       response = sttp.get(uri).header("Authorization", s"bearer $token").send()
-      body <- response.body.left.map(_ => new NoSuchElementException("No device info"))
+      body <- response.body.left.map(s => new NoSuchElementException(s"No device info [${s}]"))
     } yield {
       body
     }
@@ -50,19 +51,19 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher 
         .map(_.asInstanceOf[JObject])
         .toRight(new IllegalArgumentException("response body couldn't be parsed as json object"))
 
-      _ <- scala.util.Try(Extraction.extract[DeviceInfo](parsedResponse))
+      di <- scala.util.Try(Extraction.extract[DeviceInfo](parsedResponse))
         .recover {
           case _: Exception => throw new IllegalArgumentException("response body couldn't be materialized")
         }.toEither
+
+      _ = logger.info("device_info={}", di.toString)
 
     } yield parsedResponse
 
     enrichment.fold({ error =>
       val requestId = record.requestIdHeader().orNull
       logger.error(s"error while trying to enrich [{}]", v("requestId", requestId), error)
-      // we ignore the errors here
-      record.withExtraHeaders("http-status-code" -> "400", "x-code" -> xcode(error).toString)
-
+      throw WithHttpStatus(400, error, Option(xcode(error)))
     }, { extraData =>
       val newContext = record.value().context.merge(extraData)
       record.copy(value = record.value().copy(context = newContext))
