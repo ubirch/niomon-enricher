@@ -1,7 +1,6 @@
 package com.ubirch.configurationinjector
 
 import com.softwaremill.sttp._
-import com.typesafe.scalalogging.StrictLogging
 import com.ubirch.kafka.MessageEnvelope
 import com.ubirch.niomon.base.NioMicroservice
 import com.ubirch.niomon.base.NioMicroservice.WithHttpStatus
@@ -12,9 +11,7 @@ import org.json4s._
 import org.json4s.JsonAST.JObject
 import org.json4s.jackson.JsonMethods
 
-case class DeviceInfo(hwDeviceId: String, description: String, customerId: String)
-
-class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher with StrictLogging {
+class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends UbirchEnricher {
 
   implicit val sttpBackend: SttpBackend[Id, Nothing] = HttpURLConnectionBackend()
 
@@ -39,7 +36,7 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher 
 
     implicit val formats: Formats = com.ubirch.kafka.formats
 
-    val enrichment = for {
+    val enrichment: Either[Throwable, JObject] = for {
       token <- record
         .findHeader("X-Ubirch-DeviceInfo-Token")
         .toRight(new NoSuchElementException("No X-Ubirch-DeviceInfo-Token header present"))
@@ -51,6 +48,7 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher 
         .map(_.asInstanceOf[JObject])
         .toRight(new IllegalArgumentException("response body couldn't be parsed as json object"))
 
+      //This is an extra check on parsing what is expected.
       di <- scala.util.Try(Extraction.extract[DeviceInfo](parsedResponse))
         .recover {
           case _: Exception => throw new IllegalArgumentException("response body couldn't be materialized")
@@ -68,13 +66,6 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends Enricher 
       val newContext = record.value().context.merge(extraData)
       record.copy(value = record.value().copy(context = newContext))
     })
-  }
-
-  def xcode(reason: Throwable): Int = reason match {
-    case _: NoSuchElementException => 1000
-    case _: IllegalArgumentException => 2000
-    case _: RuntimeException => 4000
-    case _ => 5000
   }
 
 }
