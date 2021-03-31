@@ -13,7 +13,7 @@ import org.json4s.JsonAST.JObject
 
 class UbirchTokenEnricher extends UbirchEnricher {
 
-  implicit val formats: Formats = com.ubirch.kafka.formats
+  implicit private val formats: Formats = com.ubirch.kafka.formats
 
   override def enrich(record: ConsumerRecord[String, MessageEnvelope]): ConsumerRecord[String, MessageEnvelope] = {
 
@@ -22,12 +22,14 @@ class UbirchTokenEnricher extends UbirchEnricher {
         .findHeader("X-Ubirch-DeviceInfo-Token")
         .toRight(new NoSuchElementException("No X-Ubirch-DeviceInfo-Token header present"))
 
+      claims <- TokenApi.decodeAndVerify(token).toEither
+      clientId <- claims.isSubjectUUID.toEither
+
       hardwareId <- record.findHeader("X-Ubirch-Hardware-Id")
         .map(UUID.fromString)
         .toRight(new NoSuchElementException("missing X-Ubirch-Hardware-Id header"))
 
-      claims <- TokenApi.decodeAndVerify(token).toEither
-      clientId <- claims.isSubjectUUID.toEither
+      _ <- claims.validateIdentity(hardwareId).toEither
 
       diObj <- scala.util.Try(DeviceInfo(hardwareId.toString, "", clientId.toString))
         .map(Extraction.decompose)
