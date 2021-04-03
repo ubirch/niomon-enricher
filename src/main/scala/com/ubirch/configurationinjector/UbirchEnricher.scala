@@ -2,9 +2,9 @@ package com.ubirch.configurationinjector
 
 import com.typesafe.scalalogging.LazyLogging
 
-trait UbirchEnricher extends Enricher with LazyLogging {
+case class DeviceInfo(hwDeviceId: String, description: String, customerId: String)
 
-  case class DeviceInfo(hwDeviceId: String, description: String, customerId: String)
+trait UbirchEnricher extends Enricher with LazyLogging {
 
   def xcode(reason: Throwable): Int = reason match {
     case _: NoSuchElementException => 1000
