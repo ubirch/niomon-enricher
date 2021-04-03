@@ -51,7 +51,7 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends UbirchEnr
       //This is an extra check on parsing what is expected.
       di <- scala.util.Try(Extraction.extract[DeviceInfo](parsedResponse))
         .recover {
-          case _: Exception => throw new IllegalArgumentException("response body couldn't be materialized")
+          case _: Exception => throw new IllegalArgumentException("response body couldn't be materialized = " + parsedResponse.toString)
         }.toEither
 
       _ = logger.info("device_info={}", di.toString)
