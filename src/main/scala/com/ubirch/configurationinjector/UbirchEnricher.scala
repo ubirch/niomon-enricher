@@ -2,7 +2,10 @@ package com.ubirch.configurationinjector
 
 import com.typesafe.scalalogging.LazyLogging
 
-case class DeviceInfo(hwDeviceId: String, description: String, customerId: String)
+case class DeviceInfo(hwDeviceId: String,
+                      description: String,
+                      customerId: String,
+                      attributes: Map[String, String])
 
 trait UbirchEnricher extends Enricher with LazyLogging {
 

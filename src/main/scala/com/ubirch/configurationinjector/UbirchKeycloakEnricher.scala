@@ -26,7 +26,7 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends UbirchEnr
     for {
       uri <- Uri.parse(deviceInfoUrl).toEither
       response = sttp.get(uri).header("Authorization", s"bearer $token").send()
-      body <- response.body.left.map(s => new NoSuchElementException(s"No device info [${s}]"))
+      body <- response.body.left.map(s => new NoSuchElementException(s"No device info [$s]"))
     } yield {
       body
     }
@@ -36,7 +36,7 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends UbirchEnr
 
     implicit val formats: Formats = com.ubirch.kafka.formats
 
-    val enrichment: Either[Throwable, JObject] = for {
+    val enrichment: Either[Throwable, (DeviceInfo, JObject)] = for {
       token <- record
         .findHeader("X-Ubirch-DeviceInfo-Token")
         .toRight(new NoSuchElementException("No X-Ubirch-DeviceInfo-Token header present"))
@@ -56,15 +56,17 @@ class UbirchKeycloakEnricher(context: NioMicroservice.Context) extends UbirchEnr
 
       _ = logger.info("device_info={}", di.toString)
 
-    } yield parsedResponse
+    } yield (di, parsedResponse)
 
     enrichment.fold({ error =>
       val requestId = record.requestIdHeader().orNull
       logger.error(s"error while trying to enrich [{}]", v("requestId", requestId), error)
       throw WithHttpStatus(400, error, Option(xcode(error)))
-    }, { extraData =>
+    }, { case (deviceInfo, extraData) =>
       val newContext = record.value().context.merge(extraData)
-      record.copy(value = record.value().copy(context = newContext))
+      record
+        .copy[String, MessageEnvelope](value = record.value().copy(context = newContext))
+        .withExtraHeaders(("x-event-log-fast-chain-enabled", deviceInfo.attributes.getOrElse("fastChainEnabled", true.toString)))
     })
   }
 
