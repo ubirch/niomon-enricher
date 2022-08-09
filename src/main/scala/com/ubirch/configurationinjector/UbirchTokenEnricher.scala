@@ -31,7 +31,8 @@ class UbirchTokenEnricher extends UbirchEnricher {
 
       _ <- claims.validateIdentity(hardwareId).toEither
 
-      diObj <- scala.util.Try(DeviceInfo(hardwareId.toString, "", clientId.toString))
+      //TODO: The extra attribute must be added here after adding support for them to the token manager service
+      diObj <- scala.util.Try(DeviceInfo(hardwareId.toString, "", clientId.toString, Map.empty))
         .map(Extraction.decompose)
         .map(_.asInstanceOf[JObject])
         .recover {
